@@ -61,7 +61,7 @@
 		<div>
 			{result}
 		</div>
-		{#if resultAvailable}
+		{#if typeof result != "undefined"}
 			<div class="result">
 				{result}
 			</div>

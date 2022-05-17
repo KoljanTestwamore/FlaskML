@@ -3,13 +3,12 @@ from operator import mod
 from statistics import mode
 import pandas as pd
 from flask import Flask, jsonify, request, send_from_directory
-from catboost import CatBoostClassifier, Pool
+from catboost import CatBoostRegressor, Pool
 # load model
 app = Flask(__name__)
 
-model = CatBoostClassifier()
+model = CatBoostRegressor()
 model.load_model("model")
-
 labels = ['floor', 'open_plan', 'rooms', 'studio', 
          'area', 'kitchen_area', 'living_area']
 
@@ -28,17 +27,17 @@ def home(path):
 def predict():
     data = json.loads(request.data)
 
-    vals = Pool([[
-        data.get('floor'),
-        False,
-        data.get('rooms'),
-        False,
-        data.get('area'),
-        data.get('area')/5,
-        data.get('area')
-    ]])
+    vals = pd.DataFrame([[
+            data.get('floor'),
+            False,
+            data.get('rooms'),
+            False,
+            data.get('area'),
+            data.get('area')/5,
+            data.get('area')
+        ]], columns=labels)
 
-    return model.predict(vals)
+    return str(model.predict(vals)[0])
 
 if __name__ == "__main__":
     app.run(debug=True)
