@@ -1,17 +1,22 @@
 import json
-from operator import mod
-from statistics import mode
 import pandas as pd
-from flask import Flask, jsonify, request, send_from_directory
-from catboost import CatBoostRegressor, Pool
-# load model
+from flask import Flask, request, send_from_directory
+from catboost import CatBoostRegressor
+
 app = Flask(__name__)
 
 model = CatBoostRegressor()
 model.load_model("model")
+
+model_original = CatBoostRegressor()
+model_original.load_model("model_original")
+
 labels = ['floor', 'open_plan', 'rooms', 'studio', 
          'area', 'kitchen_area', 'living_area']
 
+labels_original = ['floor', 'open_plan', 'rooms', 'studio', 
+                  'area', 'kitchen_area', 'living_area',
+                  'renovation', 'agent_fee']
 
 # Path for our main Svelte page
 @app.route("/")
@@ -27,17 +32,17 @@ def home(path):
 def predict():
     data = json.loads(request.data)
 
-    vals = pd.DataFrame([[
-            data.get('floor'),
-            False,
-            data.get('rooms'),
-            False,
-            data.get('area'),
-            data.get('area')/5,
-            data.get('area')
-        ]], columns=labels)
-
-    return str(model.predict(vals)[0])
+    if data.get('origModel'):
+        vals = []
+        for label in labels_original:
+            vals.append(data.get('data').get(label))
+        print(vals, len(vals))
+        return str(model_original.predict(pd.DataFrame([vals], columns=labels_original))[0])
+    else:
+        vals = []
+        for label in labels:
+            vals.append(data.get('data').get(label))
+        return str(model.predict(pd.DataFrame([vals], columns=labels))[0])
 
 if __name__ == "__main__":
     app.run(debug=True)

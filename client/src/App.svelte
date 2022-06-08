@@ -1,45 +1,74 @@
-<script>
+<script lang="ts">
 	const data = [
 		{
-			id: "area",
-			value: 0
+			id: "floor",
+			value: 0,
 		},
 		{
-			id: "floor",
-			value: 0
+			id: "open_plan",
+			value: false,
 		},
 		{
 			id: "rooms",
+			value: 0,
+		},
+		{
+			id: "studio",
+			value: false,
+		},
+		{
+			id: "area",
+			value: 0,
+		},
+		{
+			id: "kitchen_area",
+			value: 0
+		},
+		{
+			id: "living_area",
 			value: 0
 		}
-	]
+	];
 
-	let resultAvailable = false;
+	const dataOrig = [
+		...data,
+		{
+			id: "renovation",
+			value: false
+		},
+		{
+			id: "agent_fee",
+			value: 0
+		}
+	];
 
 	let result;
+	let origModel = false;
 	
 
 	function submit(e) {
 		e.preventDefault();
-		console.log({
-				area: parseFloat(data[0].value),
-				floor: parseFloat(data[1].value),
-				rooms: parseFloat(data[2].value)
-			})
+		const requestData = {};
+		(origModel ? dataOrig : data).forEach(element => {
+			requestData[element.id] = element.value
+		});
+
+		console.log(
+			requestData
+		);
 
 		fetch("./predict", {
 			method: "POST",
 			body: JSON.stringify({
-				area: parseFloat(data[0].value),
-				floor: parseFloat(data[1].value),
-				rooms: parseFloat(data[2].value)
+				data: requestData,
+				origModel
 			})
 		})
 		.then(d => d.text())
 		.then(d => {
-			alert(d)
 			result = d;
-		});
+		})
+		.catch(e => console.log(e));
 	}
 </script>
 
@@ -48,22 +77,38 @@
 		<h class="header">
 			Predict real estate prices
 		</h>
-		{#each data as d}
-			<div>
-				<span>{d.id}</span>
-				<input class="input" type="number" bind:value="{d.value}">
-			</div>
-		{/each}
-
-		<button class="button" on:click="{submit}">
-			Send
-		</button>
-		<div>
-			{result}
-		</div>
+		<table>
+			<tr>
+				<td>
+					Model variant: 
+				</td>
+				<td>
+					<select name="model" bind:value={origModel}>
+						<option value={false}>Modified</option>
+						<option value={true}>Original</option>
+					</select>
+				</td>
+			</tr>
+			<tr><br></tr>
+			{#each (origModel ? dataOrig : data) as d}
+				<tr>
+					<td>
+						<span>{d.id}: </span>
+					</td>
+					<td>
+						{#if typeof d.value == "boolean"}
+							<input class="checkbox" type="checkbox" bind:checked="{d.value}">
+						{:else}
+							<input class="input" type="number" bind:value="{d.value}" min="1">
+						{/if}
+					</td>
+				</tr>
+			{/each}
+		</table>
+		<input type="submit" value="Send" class="button">
 		{#if typeof result != "undefined"}
 			<div class="result">
-				{result}
+				Predicted rent price: {result}
 			</div>
 		{/if}
 	</form>
@@ -95,4 +140,16 @@
     border: 4px solid black;
 	background-color: #fff;
 }
+
+.checkbox {
+	height: 20px;
+	width: 20px;
+}
+
+.result {
+	font-size: 32px;
+	border: 4px black dashed;
+	padding: 4px;
+}
+
 </style>
